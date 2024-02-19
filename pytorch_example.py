@@ -47,9 +47,9 @@ class DQN(nn.Module):
 
     def __init__(self, n_observations, n_actions):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(n_observations, 32)
-        self.layer2 = nn.Linear(32, 32)
-        self.layer3 = nn.Linear(32, n_actions)
+        self.layer1 = nn.Linear(n_observations, 128)
+        self.layer2 = nn.Linear(128, 128)
+        self.layer3 = nn.Linear(128, n_actions)
 
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
@@ -146,7 +146,7 @@ def optimize_model():
     # Compute a mask of non-final states and concatenate the batch elements
     # (a final state would've been the one after which simulation ended)
     non_final_mask = torch.tensor(tuple(map(lambda s: s is not None,
-                                          batch.next_state)), device=device, dtype=torch.bool)
+                                          batch.next_state)), device=device, dtype=torch.bool,)
     non_final_next_states = torch.cat([s for s in batch.next_state
                                                 if s is not None])
     state_batch = torch.cat(batch.state)
@@ -172,7 +172,7 @@ def optimize_model():
     # Compute Huber loss
     criterion = nn.SmoothL1Loss()
     loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-
+    print(loss)
     # Optimize the model
     optimizer.zero_grad()
     loss.backward()
@@ -183,7 +183,7 @@ def optimize_model():
 if torch.cuda.is_available():
     num_episodes = 30
 else:
-    num_episodes = 50
+    num_episodes = 800
 
 for i_episode in range(num_episodes):
     # Initialize the environment and get it's state
@@ -218,7 +218,7 @@ for i_episode in range(num_episodes):
         target_net.load_state_dict(target_net_state_dict)
 
         if done:
-            episode_durations.append(t + 1)
+            episode_durations.append(t)
             plot_durations()
             break
 
