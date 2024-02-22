@@ -52,18 +52,23 @@ class DQN(nn.Module):
 
 # Hyperparams
 
-REPLAY_BUFFER_SIZE=100000
-EPS_START=0.9
+REPLAY_BUFFER_SIZE=200000
+EPS_START=0.35
 EPS_DECAY=1000
 EPS_END=0.05
 LR=1e-4
-BATCH_SIZE=128
-GAMMA=0.99
+BATCH_SIZE=32
+GAMMA=0.7
 TAU=0.005
 
 
 env = gym.make('LunarLander-v2')
 policy_nn=DQN((env.observation_space.shape[0]),env.action_space.n)
+
+policy_nn=torch.load('lunarlander.pt')
+    
+
+
 target_nn=DQN((env.observation_space.shape[0]),env.action_space.n)
 replayBuffer=ReplayMemory(REPLAY_BUFFER_SIZE)
 optimizer=torch.optim.AdamW(policy_nn.parameters(),lr=LR,amsgrad=True)
@@ -92,9 +97,6 @@ def select_action(env,nn,state,has_eps=1.0):
             return action_q.max(-1).indices.item()
 
 def optimize(replayBuffer,BATCH_SIZE):
-
-
-
 
     if(len(replayBuffer) < BATCH_SIZE):
         return 0
@@ -129,62 +131,50 @@ def optimize(replayBuffer,BATCH_SIZE):
         optimizer.step()
         return loss.item()
 
+def train():
+    optimize(replayBuffer,BATCH_SIZE)
+
+    target_nn_state_dict=target_nn.state_dict()
+    policy_nn_state_dict=policy_nn.state_dict()
+    for k in policy_nn_state_dict:
+        target_nn_state_dict[k]=policy_nn_state_dict[k]*TAU + (1-TAU)*target_nn_state_dict[k]
+    target_nn.load_state_dict(target_nn_state_dict)
+
+
         
-
-
-
 rewardlist=[]
-for epoch in range(700):
+for epoch in count():
 
     state , info = env.reset()
     
-    
-    for x in count():
+    for x in range(800):
         action=select_action(env,policy_nn,state)
         new_state,reward,terminated,truncated,info=env.step(action)
         
         if terminated or truncated:
             rewardlist.append(x)
-            
-            optimize(replayBuffer,BATCH_SIZE)
-
-            target_nn_state_dict=target_nn.state_dict()
-            policy_nn_state_dict=policy_nn.state_dict()
-
-            for k in policy_nn_state_dict:
-                target_nn_state_dict[k]=policy_nn_state_dict[k]*TAU + (1-TAU)*target_nn_state_dict[k]
-            
-            target_nn.load_state_dict(target_nn_state_dict)
-            
+            train()
             break
         
         
         replayBuffer.push((state,action,reward,new_state))
-        
         state=new_state
-        optimize(replayBuffer,BATCH_SIZE)
-
-        target_nn_state_dict=target_nn.state_dict()
-        policy_nn_state_dict=policy_nn.state_dict()
-
-        for k in policy_nn_state_dict:
-            target_nn_state_dict[k]=policy_nn_state_dict[k]*TAU + (1-TAU)*target_nn_state_dict[k]
-        
-        target_nn.load_state_dict(target_nn_state_dict)
-        
+        train()
         if keyboard.is_pressed('space'):
             break
-        
     if keyboard.is_pressed('space'):
             break
-    
     plt.plot(range(len(rewardlist)),rewardlist,color='r')  
     plt.draw()
     plt.pause(0.01)
-        
+
+
 
     
+        
 
+        
+        
 torch.save(policy_nn,'lunarlander.pt')
 env = gym.make('LunarLander-v2' , render_mode='human')
 
@@ -199,6 +189,12 @@ for epoch in range(10):
         if terminated or truncated:
             break
         state=new_state
+        
+    
+        
+
+    
+
 
         
 
