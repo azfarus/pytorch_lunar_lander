@@ -34,7 +34,7 @@ def select_action(env,policy_nn,state):
     return action_q.max(-1).indices.item()
 
 env = gym.make('LunarLander-v2' , render_mode='human')
-policy_nn=torch.load('lunarlander.pt')
+policy_nn=torch.load('lunarlander-lowgamma.pt')
 
 for epoch in range(10):
 
