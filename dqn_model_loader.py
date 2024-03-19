@@ -34,7 +34,20 @@ def select_action(env,policy_nn,state):
     return action_q.max(-1).indices.item()
 
 env = gym.make('LunarLander-v2' , render_mode='human')
-policy_nn=torch.load('lunarlander-lowgamma.pt')
+print("Choose the model: \n\t1. Trained using custom code\n\t2. Trained using example code\n\t3. Trained with small batch\n\t4. Trained With lower gamma")
+num = int(input())
+file=""
+
+if num == 1:
+    file = 'lunarlander-demo.pt'
+elif num == 2:
+    file = 'lunarlanderoktrain.pt'
+elif num == 3:
+    file = 'lunarlander-SMALLBATCH.pt'
+elif num == 4:
+    file = 'lunarlander-lowgamma.pt'
+
+policy_nn=torch.load(file)
 
 for epoch in range(10):
 
@@ -44,10 +57,10 @@ for epoch in range(10):
         action=select_action(env,policy_nn,state)
         new_state,reward,terminated,truncated,info=env.step(action)
         
-        
-        
-        
         if terminated or truncated:
             
             break
         state=new_state
+        
+        
+        
